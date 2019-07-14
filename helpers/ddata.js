@@ -564,57 +564,55 @@ function anchorName (options) {
   }
 
   if (option('id-headings', options) && !isClass.call(this) && !isModule.call(this)) {
-    console.warn("Experimental heading features enabled, builds will not inlcude `name` attributes now!");
     let anchor_id = this.id.trim()
     if (this.kind == 'typedef') {
-      anchor_id += ' code' + this.type.names + 'code';
-      /* Eventually it would be nice if the following where needed instead... */
-      // if (option('name-format', options) && !isClass.call(this) && !isModule.call(this)) {
-      //   anchor_id += this.type.names;
-      // } else {
-      //   anchor_id += ' code' + this.type.names + 'code';
-      // }
+      if (option('no-gfm', options)) {
+        this.type.names.forEach((type_name) => {
+          anchor_id += ` code${type_name}code`;
+        });
+      } else {
+        this.type.names.forEach((type_name) => {
+          anchor_id += `--${type_name}`;
+        });
+      }
     }
 
     if (this.params) {
-      const paramNames = arrayify(this.params).filter(function (param) {
+      anchor_id += arrayify(this.params).filter((param) => {
         return param.name && !/\./.test(param.name);
-      }).map(function (param) {
+      }).map((param) => {
         if (param.variable) {
           return param.optional ? param.name : param.name;
         } else {
           return param.optional ? param.name : param.name;
         }
       }).join(' ');
-
-      if (paramNames) {
-        anchor_id += paramNames;
-      }
     }
 
     if (this.returns && this.kind !== 'constructor') {
-      const typeNames = arrayify(this.returns).map(function (ret) {
-        return ret.type && ret.type.names;
-      })
-      if (typeNames) {
-        anchor_id += ' code' + typeNames + 'code';
-        /* ... but I totally get how that would be a different set of changes */
-        // if (option('name-format', options) && !isClass.call(this) && !isModule.call(this)) {
-        //   anchor_id += typeNames
-        // } else {
-        //   anchor_id += ' code' + typeNames + 'code';
-        // }
-      }
+      arrayify(this.returns).map((ret) => {
+        if (ret.type) {
+          if (option('no-gfm', options)) {
+            ret.type.names.forEach((type_name) => {
+              anchor_id += ` code${type_name}code`;
+            });
+          } else {
+            ret.type.names.forEach((type_name) => {
+              anchor_id += `--${type_name}`;
+            });
+          }
+        }
+      });
     }
 
     return util.format(
       '%s%s%s',
       this.isExported ? 'exp_' : '',
       this.kind === 'constructor' ? 'new-' : '',
-      anchor_id
-        .replace(/[^a-zA-Z0-9_\- ]/g, '')
-        .replace(/ +/g, '-')
-        .toLowerCase()
+      anchor_id.toLowerCase()
+               .replace(/[^a-zA-Z0-9_\- ]/g, '')
+               .replace(/ +/g, '-')
+
     );
 
   } else {
